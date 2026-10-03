@@ -15,10 +15,12 @@ This repository contains **two related but different models**:
    A single excitation hops between pigment sites:
 
    <p align="center">
-      $$
-      H_{\mathrm{bio}} = \sum_i \epsilon_i |i\rangle\langle i| + \sum_{i \neq j} J_{ij} |i\rangle\langle j|.
-      $$
-   </p>
+
+$$
+H_{\mathrm{bio}} = \sum_i \epsilon_i |i\rangle\langle i| + \sum_{i \neq j} J_{ij} |i\rangle\langle j|.
+$$
+
+</p>
 
    Here, $\epsilon_i$ is the on-site energy of state $|i\rangle$, and $J_{ij}$ is the coupling between states $|i\rangle$ and $|j\rangle$.
 
