@@ -1,4 +1,3 @@
-\
 # BioRydberg — Biological Energy Transport with Neutral-Atom Quantum Simulation
 
 **Competition-focused project using QoolQit 1.4.0**
