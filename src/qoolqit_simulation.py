@@ -57,6 +57,8 @@ between the biological reference model and the neutral-atom model.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from importlib.metadata import version
+from time import perf_counter
 
 import numpy as np
 
@@ -91,6 +93,7 @@ from qoolqit import (
     Drive,
     QuantumProgram,
     Register,
+    RampWaveform,
 )
 
 # ---------------------------------------------------------------------------
@@ -112,6 +115,9 @@ from qoolqit.execution import (
     LocalEmulator,
     Occupation,
 )
+from pulser_simulation import QutipState
+
+from .neutral_atom_mapping import validate_coordinates
 
 
 # ===========================================================================
@@ -174,6 +180,8 @@ class QoolQitRun:
     coordinates: list[tuple[float, float]]
     interaction_matrix: np.ndarray
     program: QuantumProgram
+    elapsed_seconds: float
+    qoolqit_version: str
 
 
 # ===========================================================================
@@ -186,6 +194,7 @@ def build_program(
     duration: float = 10.0,
     amplitude: float = 0.8,
     detuning: float = 0.0,
+    final_detuning: float | None = None,
 ) -> QuantumProgram:
     """Build and compile a QoolQit Rydberg analog program.
 
@@ -267,6 +276,7 @@ def build_program(
     # Therefore geometry is effectively part of the Hamiltonian.
     # -----------------------------------------------------------------------
 
+    validate_coordinates(coordinates, maximum_extent=10.0)
     register = Register.from_coordinates(coordinates)
 
     # -----------------------------------------------------------------------
@@ -306,9 +316,10 @@ def build_program(
     # throughout the simulation.
     # -----------------------------------------------------------------------
 
-    detuning_waveform = ConstantWaveform(
-        duration,
-        detuning,
+    detuning_waveform = (
+        ConstantWaveform(duration, detuning)
+        if final_detuning is None
+        else RampWaveform(duration, detuning, final_detuning)
     )
 
     # -----------------------------------------------------------------------
@@ -382,6 +393,9 @@ def run_occupation_dynamics(
     amplitude: float = 0.8,
     detuning: float = 0.0,
     n_times: int = 31,
+    initial_site: int | None = 0,
+    occupation_threshold: float = 1e-6,
+    final_detuning: float | None = None,
 ) -> QoolQitRun:
     """Run QoolQit and obtain Rydberg occupation on every neutral atom.
 
@@ -435,6 +449,10 @@ def run_occupation_dynamics(
         raise ValueError(
             "At least two neutral atoms are required for this experiment."
         )
+    if initial_site is not None and not 0 <= initial_site < len(coordinates):
+        raise ValueError("initial_site is outside the atom range.")
+    if occupation_threshold < 0:
+        raise ValueError("occupation_threshold must be non-negative.")
 
     # -----------------------------------------------------------------------
     # STEP 1
@@ -446,6 +464,7 @@ def run_occupation_dynamics(
         duration=duration,
         amplitude=amplitude,
         detuning=detuning,
+        final_detuning=final_detuning,
     )
 
     # -----------------------------------------------------------------------
@@ -513,8 +532,18 @@ def run_occupation_dynamics(
     # device behavior.
     # -----------------------------------------------------------------------
 
+    initial_state = None
+    if initial_site is not None:
+        basis_state = ["g"] * len(coordinates)
+        basis_state[initial_site] = "r"
+        initial_state = QutipState.from_state_amplitudes(
+            eigenstates=("r", "g"),
+            amplitudes={"".join(basis_state): 1.0},
+        )
+
     emulation_config = EmulationConfig(
         observables=(occupation_observable,),
+        initial_state=initial_state,
         with_modulation=False,
     )
 
@@ -535,6 +564,7 @@ def run_occupation_dynamics(
     # This is where the actual neutral-atom quantum dynamics are simulated.
     # -----------------------------------------------------------------------
 
+    start = perf_counter()
     job = emulator.run(program)
 
     # -----------------------------------------------------------------------
@@ -543,6 +573,7 @@ def run_occupation_dynamics(
     # -----------------------------------------------------------------------
 
     results = job.results()
+    elapsed_seconds = perf_counter() - start
 
     # -----------------------------------------------------------------------
     # STEP 8
@@ -733,4 +764,6 @@ def run_occupation_dynamics(
         coordinates=coordinates,
         interaction_matrix=interaction_matrix,
         program=program,
+        elapsed_seconds=elapsed_seconds,
+        qoolqit_version=version("qoolqit"),
     )

@@ -1,0 +1,118 @@
+{
+  "title": "BioRydberg 2.0: Geometry-Aware Quantum Transport with Rydberg Atom Arrays",
+  "qoolqit_version": "1.4.0",
+  "python_version": "3.12.9",
+  "seeds": {
+    "layout": 42,
+    "geometry": [
+      11,
+      29
+    ],
+    "controls": [
+      23,
+      41
+    ]
+  },
+  "n_times": 25,
+  "optimizer": {
+    "name": "scipy differential_evolution",
+    "maxiter": 3,
+    "popsize": 4
+  },
+  "normalization_threshold": 1e-06,
+  "split_policy": "even valid time indices tune; odd valid time indices held out",
+  "probability_conservation_max_error": {
+    "two_site": 2.220446049250313e-15,
+    "three_site": 2.4424906541753444e-15
+  },
+  "biological_target_site_3_peak": {
+    "population": 0.7997322301903124,
+    "time": 5.25752508361204
+  },
+  "baseline": {
+    "coordinates": [
+      [
+        -0.1125254454028904,
+        0.7941599166653182
+      ],
+      [
+        0.4744413700582561,
+        -0.015451074828374736
+      ],
+      [
+        -0.3619159246553657,
+        -0.7787088418369434
+      ]
+    ],
+    "controls": {
+      "duration": 10.0,
+      "amplitude": 0.8,
+      "detuning": 0.0
+    },
+    "metrics": {
+      "rmse_all": 0.259494365737678,
+      "rmse_tuning": 0.2543357890082178,
+      "rmse_held_out": 0.2649695155145792,
+      "valid_time_points": 25,
+      "excluded_time_points": 0
+    },
+    "emulator_seconds": 0.12390839995350689
+  },
+  "geometry_optimized": {
+    "coordinates": [
+      [
+        -0.9855383586533283,
+        -0.23467193558523722
+      ],
+      [
+        0.13767702796377332,
+        -0.23467193558523722
+      ],
+      [
+        0.8478613306895548,
+        0.4693438711704744
+      ]
+    ],
+    "metrics": {
+      "rmse_all": 0.239121381734056,
+      "rmse_tuning": 0.2351487231741634,
+      "rmse_held_out": 0.24335192176564516,
+      "valid_time_points": 25,
+      "excluded_time_points": 0
+    },
+    "best_seed": 11,
+    "evaluations": 32
+  },
+  "fully_optimized": {
+    "controls": {
+      "duration": 7.12959303311041,
+      "amplitude": 1.159083308635532,
+      "detuning": 0.3309520577793118
+    },
+    "metrics": {
+      "rmse_all": 0.2275693789017405,
+      "rmse_tuning": 0.2225520176973164,
+      "rmse_held_out": 0.23288290115209415,
+      "valid_time_points": 25,
+      "excluded_time_points": 0
+    },
+    "best_seed": 23,
+    "evaluations": 48,
+    "emulator_seconds": 0.12434409989509732
+  },
+  "seven_site": {
+    "description": "illustrative dataset; one limited benchmark without optimization",
+    "metrics": {
+      "rmse_all": 0.18224271889999494,
+      "rmse_tuning": 0.1790632388706198,
+      "rmse_held_out": 0.18575459430103403,
+      "valid_time_points": 17,
+      "excluded_time_points": 0
+    },
+    "emulator_seconds": 0.1641198000870645,
+    "target_site_7_bio_peak": 0.1547628418309826,
+    "target_site_7_bio_peak_time": 8.93723849372385
+  },
+  "total_study_seconds": 27.179066800046712,
+  "scientific_scope": "Normalized occupations compare spatial patterns only; they are not biological excitation probabilities or quantum-state fidelities."
+}

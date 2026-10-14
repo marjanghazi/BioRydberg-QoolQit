@@ -1,0 +1,23 @@
+{
+  "qoolqit_version": "1.4.0",
+  "python_version": "3.12.9",
+  "seeds": {
+    "layout": 42,
+    "geometry": [
+      11,
+      29
+    ],
+    "controls": [
+      23,
+      41
+    ]
+  },
+  "n_times": 25,
+  "optimizer": {
+    "name": "scipy differential_evolution",
+    "maxiter": 3,
+    "popsize": 4
+  },
+  "normalization_threshold": 1e-06,
+  "split_policy": "even valid time indices tune; odd valid time indices held out"
+}

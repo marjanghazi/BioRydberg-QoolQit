@@ -51,7 +51,7 @@ def main():
     save_figure(fig, output)
 
     print(f"Saved figure to: {output}")
-    plt.show()
+    plt.close(fig)
 
 
 if __name__ == "__main__":

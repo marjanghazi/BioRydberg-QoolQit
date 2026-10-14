@@ -114,3 +114,49 @@ def rydberg_interaction_matrix(
             matrix[j, i] = interaction
 
     return matrix
+
+
+def validate_coordinates(
+    coordinates: list[tuple[float, float]] | np.ndarray,
+    *,
+    minimum_separation: float = 1.0,
+    maximum_extent: float = 4.0,
+    atol: float = 1e-9,
+) -> np.ndarray:
+    """Validate a finite 2D register against explicit geometric bounds."""
+    coords = np.asarray(coordinates, dtype=float)
+    if coords.ndim != 2 or coords.shape[1] != 2 or len(coords) < 2:
+        raise ValueError("coordinates must have shape (n_atoms, 2), n_atoms >= 2.")
+    if not np.all(np.isfinite(coords)):
+        raise ValueError("coordinates must be finite.")
+    distances = pdist(coords)
+    if np.min(distances) < minimum_separation - atol:
+        raise ValueError(
+            f"minimum atom separation must be at least {minimum_separation}."
+        )
+    extent = float(np.max(np.ptp(coords, axis=0)))
+    if extent > maximum_extent + atol:
+        raise ValueError(f"register extent must not exceed {maximum_extent}.")
+    return coords
+
+
+def normalize_coordinates(
+    coordinates: list[tuple[float, float]] | np.ndarray,
+) -> list[tuple[float, float]]:
+    """Center coordinates and scale their closest pair to unit distance."""
+    coords = np.asarray(coordinates, dtype=float)
+    if coords.ndim != 2 or coords.shape[1] != 2 or len(coords) < 2:
+        raise ValueError("coordinates must have shape (n_atoms, 2), n_atoms >= 2.")
+    coords = coords - coords.mean(axis=0, keepdims=True)
+    min_distance = float(np.min(pdist(coords)))
+    if min_distance <= 1e-12:
+        raise ValueError("coordinates contain overlapping atoms.")
+    coords = coords / min_distance
+    return [tuple(map(float, row)) for row in coords]
+
+
+def triangle_coordinates(x: float, y: float) -> list[tuple[float, float]]:
+    """Create a canonical bounded three-atom geometry from two parameters."""
+    if y <= 0:
+        raise ValueError("triangle height y must be positive.")
+    return normalize_coordinates([(0.0, 0.0), (1.0, 0.0), (x, y)])

@@ -96,7 +96,7 @@ def main():
     print(f"Saved figure to: {figure_path}")
     print(f"Saved metric table to: {table_path}")
 
-    plt.show()
+    plt.close(fig)
 
 
 if __name__ == "__main__":

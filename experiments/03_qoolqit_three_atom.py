@@ -92,7 +92,8 @@ def main():
         ROOT / "results" / "figures" / "03_qoolqit_occupations.png",
     )
 
-    plt.show()
+    plt.close(fig_network)
+    plt.close(fig_occ)
 
 
 if __name__ == "__main__":

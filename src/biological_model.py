@@ -36,6 +36,7 @@ from __future__ import annotations
 
 import numpy as np
 from scipy.linalg import expm
+from pathlib import Path
 
 
 def build_hamiltonian(
@@ -74,8 +75,11 @@ def build_hamiltonian(
             f"but got {couplings.shape}."
         )
 
-    if not np.allclose(couplings, couplings.T):
-        raise ValueError("Coupling matrix must be symmetric.")
+    if not np.all(np.isfinite(site_energies)) or not np.all(np.isfinite(couplings)):
+        raise ValueError("Hamiltonian parameters must be finite.")
+
+    if not np.allclose(couplings, couplings.T.conj()):
+        raise ValueError("Coupling matrix must be Hermitian.")
 
     # Put site energies on the diagonal.
     H = np.diag(site_energies)
@@ -87,6 +91,18 @@ def build_hamiltonian(
         raise ValueError("Hamiltonian is not Hermitian.")
 
     return H
+
+
+def load_hamiltonian_csv(path: str | Path) -> np.ndarray:
+    """Load and validate a real-valued Hamiltonian stored as a CSV matrix."""
+    matrix = np.loadtxt(Path(path), delimiter=",", dtype=float)
+    if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1]:
+        raise ValueError("Hamiltonian CSV must contain a square matrix.")
+    if not np.all(np.isfinite(matrix)):
+        raise ValueError("Hamiltonian CSV contains non-finite values.")
+    if not np.allclose(matrix, matrix.T):
+        raise ValueError("Hamiltonian CSV must be symmetric.")
+    return matrix
 
 
 def localized_initial_state(n_sites: int, initial_site: int = 0) -> np.ndarray:
@@ -125,6 +141,15 @@ def simulate_unitary_transport(
     """
     H = np.asarray(hamiltonian, dtype=complex)
     times = np.asarray(times, dtype=float)
+
+    if H.ndim != 2 or H.shape[0] != H.shape[1]:
+        raise ValueError("hamiltonian must be a square matrix.")
+    if not np.allclose(H, H.T.conj()):
+        raise ValueError("hamiltonian must be Hermitian.")
+    if times.ndim != 1 or len(times) == 0 or not np.all(np.isfinite(times)):
+        raise ValueError("times must be a non-empty finite 1D array.")
+    if np.any(times < 0):
+        raise ValueError("times must be non-negative.")
 
     n_sites = H.shape[0]
     psi0 = localized_initial_state(n_sites, initial_site)

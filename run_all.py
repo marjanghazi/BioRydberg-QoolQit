@@ -22,6 +22,7 @@ SCRIPTS = [
     "experiments/02_three_site_reference.py",
     "experiments/03_qoolqit_three_atom.py",
     "experiments/04_compare_three_site.py",
+    "experiments/05_contest_study.py",
 ]
 
 

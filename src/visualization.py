@@ -14,6 +14,25 @@ import numpy as np
 import networkx as nx
 
 
+SITE_COLORS = ("#00B8D9", "#7C3AED", "#F59E0B", "#10B981", "#EF4444", "#3B82F6", "#EC4899")
+
+
+def apply_publication_style() -> None:
+    """Apply a restrained, readable style shared by all submission plots."""
+    plt.rcParams.update(
+        {
+            "font.size": 11,
+            "axes.titlesize": 14,
+            "axes.labelsize": 11,
+            "legend.fontsize": 9,
+            "figure.dpi": 120,
+            "savefig.dpi": 240,
+            "axes.spines.top": False,
+            "axes.spines.right": False,
+        }
+    )
+
+
 def plot_site_populations(
     times: np.ndarray,
     populations: np.ndarray,
@@ -24,7 +43,13 @@ def plot_site_populations(
     fig, ax = plt.subplots(figsize=(9, 5))
 
     for site in range(populations.shape[1]):
-        ax.plot(times, populations[:, site], label=f"Site {site + 1}")
+        ax.plot(
+            times,
+            populations[:, site],
+            label=f"Site {site + 1}",
+            color=SITE_COLORS[site % len(SITE_COLORS)],
+            linewidth=2.0,
+        )
 
     ax.set_xlabel("Time")
     ax.set_ylabel(ylabel)
@@ -147,3 +172,81 @@ def save_figure(fig, path: str | Path) -> None:
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(path, dpi=180, bbox_inches="tight")
+
+
+def save_figure_pair(fig, stem: str | Path) -> tuple[Path, Path]:
+    """Save a figure as high-resolution PNG and scalable SVG."""
+    stem = Path(stem)
+    stem.parent.mkdir(parents=True, exist_ok=True)
+    png = stem.with_suffix(".png")
+    svg = stem.with_suffix(".svg")
+    fig.savefig(png, dpi=240, bbox_inches="tight", facecolor="white")
+    fig.savefig(svg, bbox_inches="tight", facecolor="white")
+    return png, svg
+
+
+def plot_interaction_matrix(matrix: np.ndarray, title: str):
+    """Plot the dimensionless 1/r^6 interaction matrix."""
+    matrix = np.asarray(matrix, dtype=float)
+    fig, ax = plt.subplots(figsize=(5.8, 4.8))
+    image = ax.imshow(matrix, cmap="magma", vmin=0.0)
+    for i in range(matrix.shape[0]):
+        for j in range(matrix.shape[1]):
+            ax.text(j, i, f"{matrix[i, j]:.3f}", ha="center", va="center", color="white" if matrix[i, j] > 0.45 else "black", fontsize=8)
+    ax.set_xticks(range(matrix.shape[0]), [f"A{i + 1}" for i in range(matrix.shape[0])])
+    ax.set_yticks(range(matrix.shape[0]), [f"A{i + 1}" for i in range(matrix.shape[0])])
+    ax.set_title(title)
+    fig.colorbar(image, ax=ax, label=r"Dimensionless interaction $1/r^6$")
+    fig.tight_layout()
+    return fig
+
+
+def plot_raw_and_total(relative_times: np.ndarray, occupations: np.ndarray):
+    """Show site-resolved occupations and their non-conserved total."""
+    fig, (ax, total_ax) = plt.subplots(2, 1, figsize=(9, 7), sharex=True, gridspec_kw={"height_ratios": [3, 1]})
+    for site in range(occupations.shape[1]):
+        ax.plot(relative_times, occupations[:, site], color=SITE_COLORS[site % len(SITE_COLORS)], linewidth=2, label=f"Atom {site + 1}")
+    ax.set_ylabel(r"Rydberg occupation $\langle n_i\rangle$")
+    ax.set_title("QoolQit site occupations from a localized initial excitation")
+    ax.legend(ncol=min(occupations.shape[1], 4))
+    ax.grid(alpha=0.2)
+    total_ax.plot(relative_times, occupations.sum(axis=1), color="#111827", linewidth=2)
+    total_ax.axhline(1.0, color="#9CA3AF", linestyle="--", linewidth=1)
+    total_ax.set_xlabel("Relative program time")
+    total_ax.set_ylabel("Total")
+    total_ax.grid(alpha=0.2)
+    fig.tight_layout()
+    return fig
+
+
+def plot_baseline_optimized(
+    biological: np.ndarray,
+    baseline_spatial: np.ndarray,
+    optimized_spatial: np.ndarray,
+    baseline_rmse: float,
+    optimized_rmse: float,
+):
+    """Compare biological profiles with baseline and optimized QoolQit runs."""
+    n = len(baseline_spatial)
+    bio = np.zeros((n, biological.shape[1]))
+    old = np.linspace(0.0, 1.0, len(biological))
+    new = np.linspace(0.0, 1.0, n)
+    for site in range(biological.shape[1]):
+        bio[:, site] = np.interp(new, old, biological[:, site])
+    fig, axes = plt.subplots(1, 2, figsize=(12, 4.8), sharex=True, sharey=True)
+    for ax, data, name, score in (
+        (axes[0], baseline_spatial, "Coupling-informed baseline", baseline_rmse),
+        (axes[1], optimized_spatial, "Optimized geometry and controls", optimized_rmse),
+    ):
+        for site in range(bio.shape[1]):
+            color = SITE_COLORS[site % len(SITE_COLORS)]
+            ax.plot(new, bio[:, site], color=color, linewidth=2, label=f"Bio {site + 1}")
+            ax.plot(new, data[:, site], color=color, linewidth=1.8, linestyle="--", label=f"Atom {site + 1}")
+        ax.set_title(f"{name}\nheld-out RMSE = {score:.3f}")
+        ax.set_xlabel("Relative evolution time")
+        ax.grid(alpha=0.2)
+    axes[0].set_ylabel("Normalized spatial profile")
+    axes[1].legend(ncol=2, fontsize=8, loc="upper right")
+    fig.suptitle("Biological reference and QoolQit spatial profiles", fontsize=15)
+    fig.tight_layout()
+    return fig
